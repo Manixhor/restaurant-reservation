@@ -32,6 +32,10 @@ customer@test.com
 customer123
 ```
 
+## Requirements
+
+See [REQUIREMENTS.md](REQUIREMENTS.md) for system requirements, install commands, and environment variable notes.
+
 ## Local Setup
 
 ### Prerequisites
