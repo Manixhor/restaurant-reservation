@@ -1,211 +1,303 @@
 # Restaurant Reservation Management System
 
-A full-stack restaurant reservation management system with customer and admin roles.
+A full-stack restaurant reservation application built with React, Node.js, Express, MongoDB, and JWT authentication. The system supports customer reservations and administrator management for a single restaurant.
 
-## Setup Instructions
+## Live Links
 
-### Prerequisites
-- Node.js 18+
-- MongoDB (running on `localhost:27017`)
+- Frontend: https://restaurant-reservation-dm6slknqa-manis-projects-b2333fb6.vercel.app
+- Backend health check: https://restaurant-reservation-backend-9a3s.onrender.com/api/health
+- GitHub repository: https://github.com/Manixhor/restaurant-reservation
 
-### Installation
+## Tech Stack
 
-```bash
-# Clone and install
-cd restaurant-reservation
-cp .env.example .env
-cd backend && npm install
-cd ../frontend && npm install
-cd ..
+- Frontend: React, Vite, React Router, Axios
+- Backend: Node.js, Express, Mongoose
+- Database: MongoDB Atlas
+- Authentication: JWT, bcryptjs
+- Deployment: Vercel for frontend, Render for backend
 
-# Configure environment (defaults are fine for local dev)
-# Edit .env if needed
+## Demo Credentials
 
-# Seed the database
-cd backend && npm run seed
+Admin:
 
-# Start backend (terminal 1)
-npm run dev
-
-# Start frontend (terminal 2)
-cd ../frontend && npm run dev
+```text
+admin@restaurant.com
+admin123
 ```
 
-## Easy Deployment Path
+Customer:
 
-Recommended setup for fastest review-friendly deployment:
+```text
+customer@test.com
+customer123
+```
 
-1. **MongoDB Atlas**
-   - Create a free M0 cluster.
-   - Create a database user.
-   - Add `0.0.0.0/0` to Network Access for simple assignment deployment.
-   - Copy the connection string for `MONGODB_URI`.
+## Local Setup
 
-2. **Backend on Render**
-   - Create a new **Web Service** from the GitHub repo.
-   - Root directory: `restaurant-reservation/backend`
-   - Build command: `npm install`
-   - Start command: `npm start`
-   - Environment variables:
-     - `MONGODB_URI=<your MongoDB Atlas connection string>`
-     - `JWT_SECRET=<long random production secret>`
-     - `JWT_EXPIRES_IN=7d`
-     - `NODE_ENV=production`
-     - `FRONTEND_URL=<your Vercel frontend URL>`
-   - After the service is live, open `/api/health` to confirm the API responds.
+### Prerequisites
 
-3. **Seed Production Data**
-   - In Render, open the backend service shell and run:
-     ```bash
-     npm run seed
-     ```
-   - This creates the default tables plus demo admin/customer accounts.
+- Node.js 18 or later
+- MongoDB Atlas connection string or local MongoDB
+- npm
 
-4. **Frontend on Vercel**
-   - Import the same GitHub repo in Vercel.
-   - Root directory: `restaurant-reservation/frontend`
-   - Build command: `npm run build`
-   - Output directory: `dist`
-   - Environment variable:
-     - `VITE_API_URL=<your Render backend URL>/api`
-   - Redeploy after adding the environment variable.
+### Environment Variables
 
-5. **Final Smoke Test**
-   - Login as admin and customer using the demo credentials below.
-   - Create a customer reservation.
-   - Try booking the same date/time until suitable tables run out to verify conflict handling.
-   - Login as admin, filter by date, update/cancel a reservation, and manage tables.
+Create a `.env` file in the project root using `.env.example` as a reference.
 
-### Default Credentials
-- **Admin**: `admin@restaurant.com` / `admin123`
-- **Customer**: `customer@test.com` / `customer123`
+```env
+MONGODB_URI=mongodb+srv://username:password@cluster-url/restaurant-reservation
+JWT_SECRET=replace-with-a-long-random-secret
+JWT_EXPIRES_IN=7d
+PORT=5001
+FRONTEND_URL=http://localhost:5173
+NODE_ENV=development
+```
 
-### Tech Stack
-- **Frontend**: React + Vite + React Router + Axios
-- **Backend**: Node.js + Express 5 + Mongoose
-- **Database**: MongoDB
-- **Authentication**: JWT (bcryptjs for password hashing)
+For the frontend, create `frontend/.env.local` if you want to explicitly point to the local backend:
+
+```env
+VITE_API_URL=http://localhost:5001/api
+```
+
+### Install Dependencies
+
+```bash
+cd restaurant-reservation/backend
+npm install
+
+cd ../frontend
+npm install
+```
+
+### Seed Database
+
+```bash
+cd restaurant-reservation/backend
+npm run seed
+```
+
+This creates default tables and demo admin/customer accounts.
+
+### Run Backend
+
+```bash
+cd restaurant-reservation/backend
+npm run dev
+```
+
+Backend runs on:
+
+```text
+http://localhost:5001
+```
+
+Health check:
+
+```text
+http://localhost:5001/api/health
+```
+
+### Run Frontend
+
+```bash
+cd restaurant-reservation/frontend
+npm run dev
+```
+
+Frontend runs on:
+
+```text
+http://localhost:5173
+```
+
+## Features
+
+### Customer
+
+- Register and login
+- Create a reservation
+- View own reservations
+- Cancel own confirmed reservations
+- See assigned table information
+
+### Admin
+
+- Login as administrator
+- View all reservations
+- Filter reservations by date
+- Search reservations by customer name or email
+- Update or cancel any reservation
+- Create, update, and delete restaurant tables
+- View table capacity and location information
 
 ## Assumptions
 
-- Single restaurant with 8 pre-configured tables (capacities: 2, 2, 4, 4, 4, 6, 6, 8)
-- Tables are located in three areas: Window (2-seaters), Main Hall (4-6 seaters), Terrace (6-8 seaters)
-- Reservations are in fixed 1-hour time slots: 11:00-14:00 (lunch) and 18:00-21:00 (dinner)
-- Customers cannot choose a specific table; the system auto-assigns the best available table
-- A reservation is exactly 1 hour (one time slot)
-- No payment, notifications, or real-time features are needed
+- The system is for one restaurant only.
+- Tables are preconfigured through the seed script.
+- Each table has a table number, capacity, and location.
+- Reservations use fixed one-hour time slots.
+- Customers cannot manually choose a table. The backend assigns the best available table.
+- Only confirmed reservations block availability. Cancelled reservations free the table.
+- Payments, notifications, and real-time updates are out of scope.
 
-## Reservation & Availability Logic
+Default seeded tables:
 
-### Table Assignment Algorithm
+```text
+Table 1: 2 seats, Window
+Table 2: 2 seats, Window
+Table 3: 4 seats, Main Hall
+Table 4: 4 seats, Main Hall
+Table 5: 4 seats, Main Hall
+Table 6: 6 seats, Main Hall
+Table 7: 6 seats, Terrace
+Table 8: 8 seats, Terrace
+```
 
-1. When a customer requests a reservation, the system:
-   - Filters all tables with capacity >= requested number of guests
-   - Finds which of those tables are already reserved (status: `confirmed`) for the same date and time slot
-   - Assigns the first available table that hasn't been booked for that slot
+Default time slots:
 
-2. **Conflict Prevention**: A MongoDB compound index on `{ table, date, timeSlot, status }` ensures efficient lookups for conflicting reservations. Only `confirmed` reservations block a table; `cancelled` reservations free the table.
+```text
+11:00, 12:00, 13:00, 14:00, 18:00, 19:00, 20:00, 21:00
+```
 
-3. **Capacity Enforcement**: Tables are filtered by capacity before checking availability, ensuring a table with 2 seats is never assigned to 4 guests.
+## Reservation And Availability Logic
 
-4. **Edge Cases**:
-   - If no table has sufficient capacity → error response
-   - If all suitable tables are booked → error response
-   - If a reservation is cancelled, the table becomes available again for that slot
+When a customer creates a reservation, the backend:
 
-## Role-Based Access
+1. Validates date, time slot, and number of guests.
+2. Finds all tables with capacity greater than or equal to the requested guest count.
+3. Finds confirmed reservations for the same date and time slot.
+4. Removes already-booked tables from the suitable table list.
+5. Assigns the smallest available table that fits the party.
+6. Returns a clear error if no suitable table is available.
 
-### Customer (User)
-- Can register/login with email and password
-- Can create reservations (auto-assigned to available table)
-- Can view their own reservations only
-- Can cancel their own reservations (only if `confirmed`)
+This prevents:
 
-### Administrator (Admin)
-- Has all customer abilities, plus:
-- Can view all reservations across all customers
-- Can filter reservations by date
-- Can edit any reservation (date, time, guests, status)
-- Can cancel any reservation
-- Can manage tables (create, edit, delete)
+- Double booking the same table for the same date and time slot
+- Assigning a table that is too small for the number of guests
+- Booking invalid or unavailable slots without a useful error message
 
-### Authorization Implementation
-- JWT tokens are issued on login/register and stored in `localStorage`
-- Backend middleware (`protect`) verifies the token on every request
-- `adminOnly` middleware checks `req.user.role === 'admin'`
-- Frontend uses `ProtectedRoute` component with optional `adminOnly` prop
-- API routes are separated: `/reservations/mine` (customer), `/reservations/all` (admin)
+The Reservation model also uses a MongoDB unique partial index on confirmed reservations for table/date/time slot. This adds a database-level safety check against duplicate confirmed bookings.
 
-## API Endpoints
+Admin reservation updates also re-run availability checks so an admin cannot move a reservation into a conflicting table/time slot.
+
+## Role-Based Access Control
+
+The backend uses JWT authentication. After login, the client sends the token in the Authorization header.
+
+Protected routes use authentication middleware to verify the token and attach the logged-in user to the request.
+
+Admin-only routes use role authorization and require:
+
+```text
+role === admin
+```
+
+Customer users can only access their own reservations. Admin users can access all reservations and table management routes.
+
+## API Overview
 
 ### Auth
-- `POST /api/auth/register` - Register a new customer
-- `POST /api/auth/login` - Login
-- `GET /api/auth/me` - Get current user (protected)
 
-### Tables
-- `GET /api/tables` - List all tables (protected)
-- `POST /api/tables` - Create table (admin only)
-- `PUT /api/tables/:id` - Update table (admin only)
-- `DELETE /api/tables/:id` - Delete table (admin only)
+```text
+POST /api/auth/register
+POST /api/auth/login
+GET  /api/auth/me
+```
 
 ### Reservations
-- `POST /api/reservations` - Create reservation (customer)
-- `GET /api/reservations/mine` - Get my reservations (customer)
-- `PATCH /api/reservations/:id/cancel` - Cancel my reservation (customer)
-- `GET /api/reservations/all` - Get all reservations (admin, optional `?date=YYYY-MM-DD`)
-- `PUT /api/reservations/:id` - Update reservation (admin)
-- `PATCH /api/reservations/:id/admin-cancel` - Cancel any reservation (admin)
-- `GET /api/reservations/availability` - Check table availability (protected, query: `date`, `timeSlot`, `numberOfGuests`)
+
+```text
+POST  /api/reservations
+GET   /api/reservations/mine
+PATCH /api/reservations/:id/cancel
+GET   /api/reservations/all
+PUT   /api/reservations/:id
+PATCH /api/reservations/:id/admin-cancel
+GET   /api/reservations/availability
+```
+
+### Tables
+
+```text
+GET    /api/tables
+POST   /api/tables
+PUT    /api/tables/:id
+DELETE /api/tables/:id
+```
 
 ## Project Structure
 
-```
+```text
 restaurant-reservation/
-├── .env                      # Environment variables
-├── README.md
 ├── backend/
-│   ├── seed.js               # Database seeder
+│   ├── seed.js
+│   ├── package.json
 │   └── src/
-│       ├── server.js         # Express app entry point
-│       ├── config/db.js      # MongoDB connection
-│       ├── controllers/      # Route handlers
-│       ├── middleware/        # Auth, validation, error handling
-│       ├── models/           # Mongoose schemas
-│       ├── routes/           # Express route definitions
-│       └── utils/            # AppError, catchAsync
-└── frontend/
-    └── src/
-        ├── App.jsx           # Routes and layout
-        ├── context/          # AuthContext
-        ├── services/         # Axios API client
-        ├── components/       # Navbar, ProtectedRoute
-        └── pages/            # Login, Register, Dashboard,
-                              # customer/NewReservation, customer/MyReservations,
-                              # admin/AdminReservations, admin/ManageTables
+│       ├── config/
+│       ├── controllers/
+│       ├── middleware/
+│       ├── models/
+│       ├── routes/
+│       ├── utils/
+│       └── server.js
+├── frontend/
+│   ├── package.json
+│   ├── vite.config.js
+│   └── src/
+│       ├── components/
+│       ├── context/
+│       ├── pages/
+│       ├── services/
+│       ├── App.jsx
+│       └── main.jsx
+├── .env.example
+└── README.md
+```
+
+## Deployment Notes
+
+Backend is deployed on Render. Required Render environment variables:
+
+```text
+MONGODB_URI=<MongoDB Atlas connection string>
+JWT_SECRET=<long random secret>
+JWT_EXPIRES_IN=7d
+NODE_ENV=production
+FRONTEND_URL=<Vercel frontend URL>
+```
+
+Frontend is deployed on Vercel. Required Vercel environment variable:
+
+```text
+VITE_API_URL=<Render backend URL>/api
+```
+
+For this deployment:
+
+```text
+VITE_API_URL=https://restaurant-reservation-backend-9a3s.onrender.com/api
 ```
 
 ## Known Limitations
 
-- No email/SMS notifications for reservation confirmations or reminders
-- No waiting list when tables are fully booked
-- Time slots are fixed (1-hour blocks, no custom durations)
-- No support for multiple restaurants or branches
-- No unit or integration tests
-- Table assignment is automatic; customers cannot pick a specific table
-- No pagination for large numbers of reservations
+- No payment flow
+- No email or SMS confirmations
+- No real-time table updates
+- No waitlist for fully booked time slots
+- No pagination for large reservation lists
+- No automated test suite
+- Single restaurant only
+- Fixed time slots only
 
-## Areas for Improvement
+## Improvements With More Time
 
-- Add time slot management (admin-configurable slots, durations)
-- Add a waitlist that auto-assigns when a table opens up due to cancellation
-- Add email notifications (e.g., Nodemailer with SendGrid)
-- Add calendar view for admin (drag-and-drop reservation management)
-- Add reservation history/archival for past reservations
-- Add unit tests (Jest for backend, Vitest for frontend) and integration tests
-- Add rate limiting and request validation hardening
-- Add pagination for reservation lists
-- Allow customers to choose specific tables from available options
-- Add a visual table layout/map for the admin interface
-- Containerize with Docker for easier deployment
-- Add CI/CD pipeline with GitHub Actions
+- Add automated backend tests for conflict handling and authorization
+- Add frontend tests for customer and admin workflows
+- Add admin-configurable time slots
+- Add email confirmations and reminders
+- Add pagination and sorting for admin reservations
+- Add waitlist support
+- Add audit logs for admin reservation changes
+- Add a calendar view for reservations
+- Add rate limiting and stronger validation rules
+- Add Docker setup for easier local and production deployment
